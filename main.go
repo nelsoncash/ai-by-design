@@ -24,13 +24,6 @@ const (
   ITERATIONS = 20
 )
 
-// entities we will be writing to a file/db
-type FilteredShot struct {
-  Id        int `json:"id"`
-  PhotoPath string `json:"photoPath"`
-  TagVector []int  `json:"tagVector"`
-}
-
 var (
   TAGS = []string{
     "clean",
@@ -53,12 +46,18 @@ var (
     "power",
     "strong",
   }
-  LOGO_SHOTS = []string{}
+  LOGO_SHOTS = []*Shot{}
   LOGO_SHOT_VECTORS = [][]int{}
   TOKEN = ""
   DB_ENTITIES = map[string]FilteredShot{}
 )
 
+// entities we will be writing to a file/db
+type FilteredShot struct {
+  Id        int `json:"id"`
+  PhotoPath string `json:"photoPath"`
+  TagVector []int  `json:"tagVector"`
+}
 
 // entity for storing any config variables
 type Config struct {
@@ -129,7 +128,7 @@ func initConfig() {
 func (shot Shot) ProcessImage() {
   fmt.Println(shot.Images.Teaser)
   ext := filepath.Ext(shot.Images.Teaser)
-  tmpFile, err := os.Create(strings.Join([]string{"tmp/tmp", shot.Title, ext}, ""))
+  tmpFile, err := os.Create(strings.Join([]string{"tmp/", strconv.Itoa(shot.Id), ext}, ""))
   if err != nil {
     panic(err)
   }
@@ -159,14 +158,14 @@ func (shot Shot) ProcessImage() {
     panic(err)
   }
 
-  convertToBW(shot.Title, ext)
+  convertToBW(strconv.Itoa(shot.Id), ext)
 }
 
 // this will convert an rgb image to grayscale
 // this is more a utility function to test the algorithms efficacy at this point
 
 func convertToBW(title, ext string) {
-  path := strings.Join([]string{"tmp/tmp", title, ext}, "")
+  path := strings.Join([]string{"tmp/", title, ext}, "")
   reader, err := os.Open(path)
   if err != nil {
     panic(err)
@@ -174,16 +173,13 @@ func convertToBW(title, ext string) {
 
   defer reader.Close()
   src, _, err := image.Decode(reader)
-  fmt.Println(src)
   // Since Converted implements image, this is now a grayscale image
   gr := &Converted{src, color.GrayModel}
   // Or do something like this to convert it into a black and
   // white image.
   // bw := []color.Color{color.Black,color.White}
   // gr := &Converted{src, color.Palette(bw)}
-
-
-  outfile, err := os.Create(strings.Join([]string{"tmp-bw/tmp", title, ext}, ""))
+  outfile, err := os.Create(strings.Join([]string{"tmp-bw/", title, ext}, ""))
   if err != nil {
     panic(err)
   }
@@ -214,19 +210,18 @@ func fetchFromDribble(queryString, path string) {
     //return empty array of events if no results
     panic(err)
   }
-  fmt.Println("response Body:", shots)
+
   _ = filterShotsByTags(shots)
   fmt.Println(DB_ENTITIES)
   err = writeEntities()
   if err != nil {
     panic(err)
   }
-  // fmt.Println(LOGO_SHOTS)
 
-  // for _, shot := range shots {
-  //   //shot.ProcessImage()
-  //   // fmt.Println(name)
-  // }
+  // only pull images from logo shots
+  for _, shot := range LOGO_SHOTS {
+    shot.ProcessImage()
+  }
 }
 
 func filterShotsByTags(shots []*Shot) []*Shot {
@@ -238,7 +233,7 @@ func filterShotsByTags(shots []*Shot) []*Shot {
       }
     }
     if isLogo {
-      LOGO_SHOTS = append(LOGO_SHOTS, shot.Images.Teaser)
+      LOGO_SHOTS = append(LOGO_SHOTS, shot)
       _, vector := containsAttribute(shot.Tags, TAGS)
       LOGO_SHOT_VECTORS = append(LOGO_SHOT_VECTORS, vector)
       filteredShot := FilteredShot{
