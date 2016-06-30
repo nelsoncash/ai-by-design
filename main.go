@@ -21,7 +21,7 @@ import (
 
 const (
   BASE_URL = "https://api.dribbble.com/v1"
-  ITERATIONS = 20
+  ITERATIONS = 40
 )
 
 var (
@@ -179,7 +179,7 @@ func convertToBW(title, ext string) {
   // white image.
   // bw := []color.Color{color.Black,color.White}
   // gr := &Converted{src, color.Palette(bw)}
-  outfile, err := os.Create(strings.Join([]string{"tmp-bw/", title, ext}, ""))
+  outfile, err := os.Create(strings.Join([]string{"tmp-bw/", title, ".png"}, ""))
   if err != nil {
     panic(err)
   }
