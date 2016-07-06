@@ -17,6 +17,7 @@ import (
   "image/png"
   "strconv"
   "time"
+  "github.com/nelsoncash/ai-by-design/scraper/cifar"
 )
 
 const (
@@ -157,7 +158,7 @@ func (shot Shot) ProcessImage() {
   if err != nil {
     panic(err)
   }
-
+  cifar.ConvertImageToRGBSlice(m)
   convertToBW(strconv.Itoa(shot.Id), ext)
 }
 
