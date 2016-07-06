@@ -55,9 +55,10 @@ var (
 
 // entities we will be writing to a file/db
 type FilteredShot struct {
-  Id        int `json:"id"`
-  PhotoPath string `json:"photoPath"`
-  TagVector []int  `json:"tagVector"`
+  Id        int     `json:"id"`
+  PhotoPath string  `json:"photoPath"`
+  TagVector []int   `json:"tagVector"`
+  TagLabel  uint8   `json:"tagLabel"`
 }
 
 // entity for storing any config variables
@@ -126,6 +127,8 @@ func initConfig() {
   TOKEN = config.DribbbleKey
 }
 
+// take a shot and write to various tmpfiles for the formats we will be using
+// also includes a func to write to a cifar style binary file
 func (shot Shot) ProcessImage() {
   fmt.Println(shot.Images.Teaser)
   ext := filepath.Ext(shot.Images.Teaser)
@@ -158,7 +161,12 @@ func (shot Shot) ProcessImage() {
   if err != nil {
     panic(err)
   }
-  cifar.ConvertImageToRGBSlice(m)
+  //cifar.ConvertImageToRGBSlice(m)
+  cifarPath := strings.Join([]string{"../tmp-cifar/", strconv.Itoa(shot.Id), ".bin"}, "")
+  err = cifar.WriteImageAsCifar(m, cifarPath, DB_ENTITIES[strconv.Itoa(shot.Id)].TagLabel)
+  if err != nil {
+    panic(err)
+  }
   convertToBW(strconv.Itoa(shot.Id), ext)
 }
 
@@ -240,6 +248,7 @@ func filterShotsByTags(shots []*Shot) []*Shot {
       filteredShot := FilteredShot{
         TagVector: vector,
         Id: shot.Id,
+        TagLabel: oneHotToInt(vector),
       }
       DB_ENTITIES[strconv.Itoa(shot.Id)] = filteredShot
     }
@@ -264,6 +273,18 @@ func containsAttribute(inputs []string, matches []string) (bool, []int) {
   return matched, matchAsVector
 }
 
+// convert on-hot vector to a uint8 label for our neural network
+// this is important when writing the image as cifar
+func oneHotToInt(vector []int) uint8 {
+  for i := range vector {
+    if vector[i] == 1 {
+      return uint8(i)
+    }
+  }
+  return uint8(0)
+}
+
+// write our entitites to a json file for now
 func writeEntities() error {
   entitiesAsJson, err := json.Marshal(DB_ENTITIES)
   if err != nil {

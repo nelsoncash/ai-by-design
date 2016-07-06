@@ -2,3 +2,4 @@ tmp/*
 tmp-bw/*
 config.json
 db/*
+tmp-cifar/*

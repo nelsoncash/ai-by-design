@@ -2,6 +2,7 @@ package cifar
 
 import (
   "bufio"
+  "encoding/binary"
   "fmt"
   "image"
   "os"
@@ -18,9 +19,9 @@ func ReadImageAsBytes(path string) (error, []byte) {
   buf := bufio.NewReader(file)
   _, err = buf.Read(bytes)
   if err != nil {
-    panic(err)xw
+    panic(err)
   }
-  fmt.Println(bytes)
+  // fmt.Println(bytes)
   return nil, bytes
 }
 
@@ -35,7 +36,7 @@ func ConvertImageToRGBSlice(m image.Image) [][]uint8 {
   var rSlice, gSlice, bSlice []uint8
 	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
 		for x := bounds.Min.X; x < bounds.Max.X; x++ {
-			r, g, b, a := m.At(x, y).RGBA()
+			r, g, b, _ := m.At(x, y).RGBA()
 			// A color's RGBA method returns values in the range [0, 65535].
 			// Shifting by 12 reduces this to the range [0, 255].
       // rgbSlice := []uint8{uint8(r>>8),uint8(g>>8),uint8(b>>8),uint8(a>>8)}
@@ -49,15 +50,15 @@ func ConvertImageToRGBSlice(m image.Image) [][]uint8 {
   total = append(total, gSlice)
   total = append(total, bSlice)
 
-  fmt.Println(total)
+  // fmt.Println(total)
   return total
 }
 
-func ConvertToCifar(labelData []uint8, imageData [][]uint8) []uint8 {
+func ConvertToCifar(labelData uint8, imageData [][]uint8) []uint8 {
   var cifar []uint8
   cifar = append(cifar, labelData)
   for i := range imageData {
-    cifar = append(cifar, imageData[i])
+    cifar = append(cifar, imageData[i]...)
   }
   return cifar
 }
@@ -75,4 +76,14 @@ func WriteCifar(cifar []uint8, filePath string) (string, error) {
 
   return filePath, nil
 
+}
+
+func WriteImageAsCifar(m image.Image, filePath string, labelData uint8) error {
+  imageData := ConvertImageToRGBSlice(m)
+  cifar := ConvertToCifar(labelData, imageData)
+  _, err := WriteCifar(cifar, filePath)
+  if err != nil {
+    fmt.Printf("Error writing to cifar out file: %s", err.Error())
+  }
+  return err
 }
