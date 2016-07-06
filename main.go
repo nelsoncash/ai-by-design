@@ -162,7 +162,7 @@ func (shot Shot) ProcessImage() {
     panic(err)
   }
   //cifar.ConvertImageToRGBSlice(m)
-  cifarPath := strings.Join([]string{"../tmp-cifar/", strconv.Itoa(shot.Id), ".bin"}, "")
+  cifarPath := strings.Join([]string{"tmp-cifar/", strconv.Itoa(shot.Id), ".bin"}, "")
   err = cifar.WriteImageAsCifar(m, cifarPath, DB_ENTITIES[strconv.Itoa(shot.Id)].TagLabel)
   if err != nil {
     panic(err)
