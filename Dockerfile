@@ -6,8 +6,8 @@ ADD . /app
 
 EXPOSE 8000
 
-VOLUME [".:/app"]
+VOLUME ["..:/app"]
 
-WORKDIR /app
+WORKDIR /app/trainer
 
-CMD ["/bin/bash"]
+CMD ["/bin/bash", "-c", "python main.py"]
