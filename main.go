@@ -23,7 +23,7 @@ import (
 
 const (
   BASE_URL = "https://api.dribbble.com/v1"
-  ITERATIONS = 40
+  ITERATIONS = 100
 )
 
 var (

@@ -3,6 +3,9 @@ from tensorflow.models.image.cifar10 import cifar10
 import json
 import re
 import time
+import numpy as np
+from datetime import datetime
+import os.path
 
 # Basic model parameters as external flags.
 flags = tf.app.flags
@@ -12,20 +15,21 @@ flags.DEFINE_integer('num_epochs', 2, 'Number of epochs to run trainer.')
 flags.DEFINE_integer('hidden1', 128, 'Number of units in hidden layer 1.')
 flags.DEFINE_integer('hidden2', 32, 'Number of units in hidden layer 2.')
 flags.DEFINE_boolean('log_device_placement', False, """Whether to log device placement.""")
-flags.DEFINE_string('train_dir', '/tmp/cifar10_train',
+flags.DEFINE_string('train_dir', '/tmp/ai_design_train',
                            """Directory where to write event logs """
                            """and checkpoint.""")
-flags.DEFINE_integer('max_steps', 10000,
+flags.DEFINE_integer('max_steps', 14,
                             """Number of batches to run.""")
 # flags.DEFINE_integer('batch_size', 100, 'Batch size.')
 
 
-IMAGE_WIDTH = 200
-IMAGE_HEIGHT = 150
+IMAGE_WIDTH = 40
+IMAGE_HEIGHT = 30
 IMAGE_SIZE = IMAGE_WIDTH * IMAGE_HEIGHT
 BATCH_SIZE = 128
 NUM_CLASSES = 19
 TOWER_NAME = 'tower'
+SMALL_BATCH_SIZE = 16
 
 ALL_SHOTS = []
 ALL_VECTORS = []
@@ -39,7 +43,7 @@ def get_all_shots():
             ALL_SHOTS.append(v)
             ALL_VECTORS.append(v['tagVector'])
             ALL_IDS.append(v['id'])
-            ALL_FILENAMES.append("".join(("../tmp-cifar/", k, ".bin")))
+            ALL_FILENAMES.append("".join(("../tmp-cifar-sm/", k, ".bin")))
         print(ALL_VECTORS)
         print(len(ALL_FILENAMES))
 
@@ -140,12 +144,12 @@ def inputs(train, batch_size, num_epochs):
         # (Internally uses a RandomShuffleQueue.)
         # We run this in two threads to avoid being a bottleneck.
         images, sparse_labels = tf.train.shuffle_batch(
-            [float_image, read_input.label], batch_size=90, num_threads=2,
+            [float_image, read_input.label], batch_size=SMALL_BATCH_SIZE, num_threads=2,
             capacity=1000 + 3 * batch_size,
             # Ensures a minimum amount of shuffling of examples.
             min_after_dequeue=1000)
 
-        return images, tf.reshape(sparse_labels, [90])
+        return images, tf.reshape(sparse_labels, [SMALL_BATCH_SIZE])
 
 def read_and_decode(filename_queue):
     reader = tf.TFRecordReader()
@@ -292,7 +296,7 @@ def calc_inference(images):
     # local3
     with tf.variable_scope('local3') as scope:
     # Move everything into depth so we can perform a single matrix multiply.
-        reshape = tf.reshape(pool1, [90, -1])
+        reshape = tf.reshape(pool1, [SMALL_BATCH_SIZE, -1])
         dim = reshape.get_shape()[1].value
         weights = _variable_with_weight_decay('weights', shape=[dim, 384],
                                               stddev=0.04, wd=0.004)
