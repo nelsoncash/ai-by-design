@@ -41,7 +41,7 @@ def get_all_shots():
             ALL_IDS.append(v['id'])
             ALL_FILENAMES.append("".join(("../tmp-cifar/", k, ".bin")))
         print(ALL_VECTORS)
-        print(ALL_FILENAMES)
+        print(len(ALL_FILENAMES))
 
 def run_training():
     """Train MNIST for a number of steps."""
@@ -87,9 +87,10 @@ def run_training():
 
         for step in xrange(FLAGS.max_steps):
           start_time = time.time()
+          print(step)
+          print(train_op)
           _, loss_value = sess.run([train_op, loss])
           duration = time.time() - start_time
-          print(step)
 
           assert not np.isnan(loss_value), 'Model diverged with loss = NaN'
 
@@ -139,12 +140,12 @@ def inputs(train, batch_size, num_epochs):
         # (Internally uses a RandomShuffleQueue.)
         # We run this in two threads to avoid being a bottleneck.
         images, sparse_labels = tf.train.shuffle_batch(
-            [float_image, read_input.label], batch_size=batch_size, num_threads=2,
+            [float_image, read_input.label], batch_size=90, num_threads=2,
             capacity=1000 + 3 * batch_size,
             # Ensures a minimum amount of shuffling of examples.
             min_after_dequeue=1000)
 
-        return images, tf.reshape(sparse_labels, [batch_size])
+        return images, tf.reshape(sparse_labels, [90])
 
 def read_and_decode(filename_queue):
     reader = tf.TFRecordReader()
@@ -291,7 +292,7 @@ def calc_inference(images):
     # local3
     with tf.variable_scope('local3') as scope:
     # Move everything into depth so we can perform a single matrix multiply.
-        reshape = tf.reshape(pool1, [FLAGS.batch_size, -1])
+        reshape = tf.reshape(pool1, [90, -1])
         dim = reshape.get_shape()[1].value
         weights = _variable_with_weight_decay('weights', shape=[dim, 384],
                                               stddev=0.04, wd=0.004)
@@ -306,7 +307,7 @@ def calc_inference(images):
                                   tf.constant_initializer(0.0))
         softmax_linear = tf.add(tf.matmul(local3, weights), biases, name=scope.name)
         _activation_summary(softmax_linear)
-
+    print(softmax_linear.get_shape())
     return softmax_linear
 
 def _variable_on_cpu(name, shape, initializer):
