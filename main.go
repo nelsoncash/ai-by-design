@@ -18,6 +18,7 @@ import (
   "strconv"
   "time"
   "github.com/nelsoncash/ai-by-design/scraper/cifar"
+  "github.com/nfnt/resize"
 )
 
 const (
@@ -162,12 +163,29 @@ func (shot Shot) ProcessImage() {
     panic(err)
   }
   //cifar.ConvertImageToRGBSlice(m)
+
+  // convert full size to cifar data
   cifarPath := strings.Join([]string{"tmp-cifar/", strconv.Itoa(shot.Id), ".bin"}, "")
   err = cifar.WriteImageAsCifar(m, cifarPath, DB_ENTITIES[strconv.Itoa(shot.Id)].TagLabel)
   if err != nil {
     panic(err)
   }
-  convertToBW(strconv.Itoa(shot.Id), ext)
+
+  // resize image and convert to cifar data
+  resized := resizeImage(m)
+  cifarResizedPath := strings.Join([]string{"tmp-cifar-sm/", strconv.Itoa(shot.Id), ".bin"}, "")
+  err = cifar.WriteImageAsCifar(resized, cifarResizedPath, DB_ENTITIES[strconv.Itoa(shot.Id)].TagLabel)
+  if err != nil {
+    panic(err)
+  }
+  //convertToBW(strconv.Itoa(shot.Id), ext)
+}
+
+// resize all logos to smaller to conserve memory in tensorflow
+
+func resizeImage(m image.Image) image.Image {
+  resized := resize.Resize(40, 30, m, resize.Lanczos3)
+  return resized
 }
 
 // this will convert an rgb image to grayscale

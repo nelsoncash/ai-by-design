@@ -3,3 +3,4 @@ tmp-bw/*
 config.json
 db/*
 tmp-cifar/*
+tmp-cifar-sm/*
