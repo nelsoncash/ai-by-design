@@ -15,7 +15,7 @@ flags.DEFINE_integer('num_epochs', 2, 'Number of epochs to run trainer.')
 flags.DEFINE_integer('hidden1', 128, 'Number of units in hidden layer 1.')
 flags.DEFINE_integer('hidden2', 32, 'Number of units in hidden layer 2.')
 flags.DEFINE_boolean('log_device_placement', False, """Whether to log device placement.""")
-flags.DEFINE_string('train_dir', '/tmp/ai_design_train',
+flags.DEFINE_string('train_dir', 'tmp/ai_design_train',
                            """Directory where to write event logs """
                            """and checkpoint.""")
 flags.DEFINE_integer('max_steps', 14,
@@ -44,8 +44,7 @@ def get_all_shots():
             ALL_VECTORS.append(v['tagVector'])
             ALL_IDS.append(v['id'])
             ALL_FILENAMES.append("".join(("../tmp-cifar-sm/", k, ".bin")))
-        print(ALL_VECTORS)
-        print(len(ALL_FILENAMES))
+        return ALL_FILENAMES, ALL_VECTORS
 
 def run_training():
     """Train MNIST for a number of steps."""
@@ -115,7 +114,9 @@ def run_training():
           # Save the model checkpoint periodically.
           if step % 1000 == 0 or (step + 1) == FLAGS.max_steps:
             checkpoint_path = os.path.join(FLAGS.train_dir, 'model.ckpt')
+            print('saving')
             saver.save(sess, checkpoint_path, global_step=step)
+
 
 def inputs(train, batch_size, num_epochs):
     if not num_epochs: num_epochs = None
@@ -138,6 +139,9 @@ def inputs(train, batch_size, num_epochs):
 
         # Subtract off the mean and divide by the variance of the pixels.
         float_image = tf.image.per_image_whitening(resized_image)
+        # flattened = tf.squeeze(float_image)
+        print('float_image')
+        print(float_image)
         #image, label = read_and_decode(filename_queue)
 
         # Shuffle the examples and collect them into batch_size batches.
@@ -238,8 +242,9 @@ def read_cifar10(filename_queue):
     result.uint8image = tf.transpose(depth_major, [1, 2, 0])
     graph = tf.get_default_graph()
     # print(graph.get_operations())
-    print(result.uint8image)
-    print(result.label)
+    # print(result.uint8image)
+    # print(result.label)
+    print(result)
     return result
 
 # from https://github.com/tensorflow/tensorflow/blob/r0.9/tensorflow/models/image/cifar10/cifar10.py#L252
@@ -254,8 +259,6 @@ def calc_loss(logits, labels):
     Loss tensor of type float.
     """
     labels = tf.cast(labels, tf.int64)
-    print(labels.get_shape())
-    print(logits.get_shape())
     cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(
         logits, labels, name='cross_entropy_per_example')
     cross_entropy_mean = tf.reduce_mean(cross_entropy, name='cross_entropy')
@@ -311,7 +314,8 @@ def calc_inference(images):
                                   tf.constant_initializer(0.0))
         softmax_linear = tf.add(tf.matmul(local3, weights), biases, name=scope.name)
         _activation_summary(softmax_linear)
-    print(softmax_linear.get_shape())
+    print('softmax linear')
+    print(softmax_linear)
     return softmax_linear
 
 def _variable_on_cpu(name, shape, initializer):

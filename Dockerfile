@@ -8,6 +8,7 @@ EXPOSE 8000
 
 VOLUME ["..:/app"]
 
-WORKDIR /app/trainer
+WORKDIR /app/trainer-mnist
 
 CMD ["/bin/bash", "-c", "python main.py"]
+#CMD ["/bin/bash"]
