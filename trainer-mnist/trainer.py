@@ -29,7 +29,7 @@ IMAGE_SIZE = IMAGE_WIDTH * IMAGE_HEIGHT
 BATCH_SIZE = 128
 NUM_CLASSES = 19
 TOWER_NAME = 'tower'
-SMALL_BATCH_SIZE = 16
+SMALL_BATCH_SIZE = 130
 
 ALL_SHOTS = []
 ALL_VECTORS = []
@@ -44,6 +44,9 @@ def get_all_shots():
             ALL_VECTORS.append(v['tagVector'])
             ALL_IDS.append(v['id'])
             ALL_FILENAMES.append("".join(("../tmp-cifar-sm/", k, ".bin")))
+        print('len filenames')
+        print(len(ALL_FILENAMES))
+        print(len(ALL_VECTORS))
         return ALL_FILENAMES, ALL_VECTORS
 
 def run_training():
@@ -122,7 +125,7 @@ def inputs(train, batch_size, num_epochs):
     if not num_epochs: num_epochs = None
     with tf.name_scope('input'):
         filename_queue = tf.train.string_input_producer(
-            ALL_FILENAMES, num_epochs=num_epochs)
+            ALL_FILENAMES)
 
         # Even when reading in multiple threads, share the filename
         # queue.

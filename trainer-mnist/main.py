@@ -1,6 +1,7 @@
 import tensorflow as tf
 import trainer
 import numpy as np
+import os
 
 IMAGE_WIDTH = 40
 IMAGE_HEIGHT = 30
@@ -8,6 +9,7 @@ IMAGE_DEPTH = 3
 TOTAL_PIXELS = IMAGE_WIDTH * IMAGE_HEIGHT * IMAGE_DEPTH
 LABEL_SIZE = 19
 BATCH_SIZE = 128
+TRAIN_DIR = "tmp/ai_design_train"
 # flags = tf.app.flags
 # FLAGS = flags.FLAGS
 # flags.DEFINE_integer('num_epochs', 2, 'Number of epochs to run trainer.')
@@ -38,7 +40,7 @@ def run_training(all_vectors):
 
         y_ = tf.placeholder(tf.float32, [None, LABEL_SIZE])
 
-        cross_entropy = tf.reduce_mean(-tf.reduce_sum(y_ * tf.log(y)))
+        cross_entropy = tf.reduce_mean(-tf.reduce_sum(y_ * tf.log(y), reduction_indices=[1]))
 
         train_step = tf.train.GradientDescentOptimizer(0.5).minimize(cross_entropy)
 
@@ -57,21 +59,27 @@ def run_training(all_vectors):
         print(tf.shape(images))
         print(vector_inputs)
 
-        ims = tf.reshape(images, [16, TOTAL_PIXELS])
-        tf.train.start_queue_runners(sess=sess)
+        ims = tf.reshape(images, [130, TOTAL_PIXELS])
+        saver = tf.train.Saver(tf.all_variables())
         with sess.as_default():
-            for i in range(1):
-                print('running session')
-                print(vector_inputs.eval())
-                print i
-                print(ims.eval())
-                for k in ims.eval():
-                    print(len(k))
-                # sess.run(flattened_image, feed_dict={m:ims.eval()[0]})
-                # print(flattened_image)
+            coord = tf.train.Coordinator()
+            threads = tf.train.start_queue_runners(sess=sess, coord=coord)
+            for i in range(10):
                 sess.run(train_step, feed_dict={x:ims.eval(), y_: vector_inputs.eval()})
+            coord.request_stop()
+            coord.join(threads)
+            correct_prediction = tf.equal(tf.argmax(y, 1), tf.argmax(y_, 1))
+            accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
+            print(accuracy.eval({x: ims.eval(), y_: vector_inputs.eval()}))
+            classification = sess.run(tf.argmax(y, 1), feed_dict={x:[ims.eval()[100]]})
+            print 'Neural Network predicted', classification[0]
+            #print(y_.eval())
+        #tf.app.run()
 
 def image_data(all_filenames):
+    pass
+
+def main(_):
     pass
 
 
