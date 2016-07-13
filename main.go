@@ -261,15 +261,17 @@ func filterShotsByTags(shots []*Shot) []*Shot {
       }
     }
     if isLogo {
-      LOGO_SHOTS = append(LOGO_SHOTS, shot)
-      _, vector := containsAttribute(shot.Tags, TAGS)
-      LOGO_SHOT_VECTORS = append(LOGO_SHOT_VECTORS, vector)
-      filteredShot := FilteredShot{
-        TagVector: vector,
-        Id: shot.Id,
-        TagLabel: oneHotToInt(vector),
+      if ok, vector := containsAttribute(shot.Tags, TAGS); ok {
+        LOGO_SHOTS = append(LOGO_SHOTS, shot)
+        // _, vector := containsAttribute(shot.Tags, TAGS)
+        LOGO_SHOT_VECTORS = append(LOGO_SHOT_VECTORS, vector)
+        filteredShot := FilteredShot{
+          TagVector: vector,
+          Id: shot.Id,
+          TagLabel: oneHotToInt(vector),
+        }
+        DB_ENTITIES[strconv.Itoa(shot.Id)] = filteredShot
       }
-      DB_ENTITIES[strconv.Itoa(shot.Id)] = filteredShot
     }
   }
   return shots
