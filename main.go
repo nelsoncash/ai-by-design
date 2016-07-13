@@ -5,7 +5,7 @@ import (
   "strings"
   "fmt"
   "io/ioutil"
-  //"github.com/disintegration/imaging"
+  //"sync"
   "image/color"
   "encoding/json"
   "image"
@@ -23,7 +23,7 @@ import (
 
 const (
   BASE_URL = "https://api.dribbble.com/v1"
-  ITERATIONS = 100
+  ITERATIONS = 20
 )
 
 var (
@@ -216,7 +216,7 @@ func convertToBW(title, ext string) {
 
 // Makes an HTTP request to Dribble's API
 // grabs shots based on `week` parameters
-func fetchFromDribble(queryString, path string) {
+func fetchFromDribble(queryString, path string) bool {
   headerValue := strings.Join([]string{"Bearer ", TOKEN}, "")
   url := strings.Join([]string{BASE_URL, path}, "/")
   url = strings.Join([]string{url, queryString}, "?")
@@ -249,6 +249,7 @@ func fetchFromDribble(queryString, path string) {
   for _, shot := range LOGO_SHOTS {
     shot.ProcessImage()
   }
+  return true
 }
 
 func filterShotsByTags(shots []*Shot) []*Shot {
@@ -314,11 +315,37 @@ func writeEntities() error {
 
 func fetchPosts() {
   now := time.Now()
-  for i := 0;i < ITERATIONS; i++ {
-    then := now.AddDate(0, 0, (i * -7))
-    y, m, d := then.Date()
-    week := strings.Join([]string{strconv.Itoa(y), strconv.Itoa(int(m)), strconv.Itoa(d)}, "-")
-    queryString := strings.Join([]string{"timeframe=", "weekly", "&date=", week}, "")
-    fetchFromDribble(queryString, "shots")
+  for i := 0; i<ITERATIONS; i++ {
+    runFetchInRoutine(i, now)
   }
+}
+
+// Taking out async requests for now
+// because it does wonky stuff when you write image files async
+
+// func fetchPostsAsync() {
+//   var wg sync.WaitGroup
+//   wg.Add(ITERATIONS)
+//   sem := make(chan bool, ITERATIONS)
+//   now := time.Now()
+//   for i := 0; i<ITERATIONS; i++ {
+//     go func(i int, now time.Time){
+//       fmt.Println(i)
+//       defer wg.Done()
+//       sem <- runFetchInRoutine(i, now)
+//     }(i, now)
+//   }
+//   for _ = range sem {
+//     fmt.Println("fetch complete")
+//   }
+//   wg.Wait()
+// }
+
+func runFetchInRoutine(i int, now time.Time) bool {
+  then := now.AddDate(0, 0, (i * -7))
+  y, m, d := then.Date()
+  week := strings.Join([]string{strconv.Itoa(y), strconv.Itoa(int(m)), strconv.Itoa(d)}, "-")
+  queryString := strings.Join([]string{"timeframe=", "weekly", "&date=", week}, "")
+  ret := fetchFromDribble(queryString, "shots")
+  return ret
 }
