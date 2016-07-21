@@ -59,20 +59,21 @@ def run_training(all_vectors):
         print(tf.shape(images))
         print(vector_inputs)
 
-        ims = tf.reshape(images, [130, TOTAL_PIXELS])
+        ims = tf.reshape(images, [len(all_vectors), TOTAL_PIXELS])
         saver = tf.train.Saver(tf.all_variables())
         with sess.as_default():
             coord = tf.train.Coordinator()
             threads = tf.train.start_queue_runners(sess=sess, coord=coord)
-            for i in range(10):
+            for i in range(100):
+                print(i)
                 sess.run(train_step, feed_dict={x:ims.eval(), y_: vector_inputs.eval()})
             coord.request_stop()
             coord.join(threads)
             correct_prediction = tf.equal(tf.argmax(y, 1), tf.argmax(y_, 1))
             accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
             print(accuracy.eval({x: ims.eval(), y_: vector_inputs.eval()}))
-            classification = sess.run(tf.argmax(y, 1), feed_dict={x:[ims.eval()[100]]})
-            print 'Neural Network predicted', classification[0]
+            classification = sess.run(tf.argmax(y, 1), feed_dict={x:[ims.eval()[0]]})
+            print 'Neural Network predicted', classification
             #print(y_.eval())
         #tf.app.run()
 

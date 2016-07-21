@@ -23,7 +23,7 @@ import (
 
 const (
   BASE_URL = "https://api.dribbble.com/v1"
-  ITERATIONS = 20
+  ITERATIONS = 2000
 )
 
 var (
@@ -156,9 +156,6 @@ func (shot Shot) ProcessImage() {
   defer reader.Close()
   m, _, err := image.Decode(reader)
   // fmt.Println(m)
-  if m != nil {
-    fmt.Println(m.Bounds())
-  }
   if err != nil {
     panic(err)
   }
@@ -239,7 +236,6 @@ func fetchFromDribble(queryString, path string) bool {
   }
 
   _ = filterShotsByTags(shots)
-  fmt.Println(DB_ENTITIES)
   err = writeEntities()
   if err != nil {
     panic(err)
@@ -285,7 +281,6 @@ func containsAttribute(inputs []string, matches []string) (bool, []int) {
     input := inputs[a]
     for i := range matches {
       if input == matches[i] {
-        fmt.Println(input)
         matchAsVector[i] = 1
         matched = true
       }
@@ -318,8 +313,14 @@ func writeEntities() error {
 func fetchPosts() {
   now := time.Now()
   for i := 0; i<ITERATIONS; i++ {
+    mod := i + 1
+    if mod % 60 == 0 {
+      fmt.Println("sleeping 60")
+      time.Sleep(time.Second * 60)
+    }
     runFetchInRoutine(i, now)
   }
+  fmt.Println(DB_ENTITIES)
 }
 
 // Taking out async requests for now
@@ -344,10 +345,12 @@ func fetchPosts() {
 // }
 
 func runFetchInRoutine(i int, now time.Time) bool {
-  then := now.AddDate(0, 0, (i * -7))
+  fmt.Println(i)
+  then := now.AddDate(0, 0, (i * -1))
   y, m, d := then.Date()
   week := strings.Join([]string{strconv.Itoa(y), strconv.Itoa(int(m)), strconv.Itoa(d)}, "-")
-  queryString := strings.Join([]string{"timeframe=", "weekly", "&date=", week}, "")
+  //queryString := strings.Join([]string{"timeframe=", "weekly", "&date=", week}, "")
+  queryString := strings.Join([]string{"date=", week}, "")
   ret := fetchFromDribble(queryString, "shots")
   return ret
 }
